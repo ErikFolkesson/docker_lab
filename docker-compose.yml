@@ -1,0 +1,36 @@
+version: '3.8'
+
+networks:
+  crawlernet:
+    driver: bridge
+
+services:
+  webserver:
+    image: nginx:stable-alpine
+    container_name: webserver
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+    networks:
+      - crawlernet
+    ports:
+      - "8080:80"
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: server
+    networks:
+      - crawlernet
+    depends_on:
+      - webserver
+
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: client
+    networks:
+      - crawlernet
+    depends_on:
+      - server
