@@ -1,31 +1,38 @@
-basename=$(shell docker inspect --format='{{.NetworkSettings.Networks.crawlernet.Gateway}}' webserver)
+# Number of clients to run
 n=2
 
-# to run the application you need to prepare the environment (make create_web) \
-  (now you should be also able to access the index.html page from your browser, e.g., make surf if you use google-chrome) \
-  then you need to install the Pythion packeges to run the Python scripts (make install) \
-  finally you can run the application: \
-  - open a new terminal in this folder and launch the server (make run_server) \
-  - open a new terminal in this folder and launch n clients (make run_clients) \
+# Build the docker images
+build:
+	docker-compose build
 
-surf:
-	google-chrome --incognito http://$(basename):8080 2> /dev/null
+# Create the network and start the webserver
+up:
+	docker-compose up -d webserver
 
-install:
-# if this does not work, you could need to install the packages through the apt-get command
-	pip3 install -q requests --upgrade
-	pip3 install -q bs4 --upgrade
+# Stop and remove containers, networks
+down:
+	docker-compose down -v
 
+# Run the server
 run_server:
-	python3 server.py
+	docker-compose up server
 
+# Run n clients in parallel
 run_clients:
-	for i in $$(seq ${n}); do python3 client.py http://$(basename):8080 page_$$i.html & done
+	@for /l %i in (1, 1, ${n}) do @start /b docker-compose run client python client.py http://webserver:80 page_%i.html
 
-create_web:
-	docker rm -v -f $$(docker ps -qa) 2> /dev/null || true
-	docker system prune -a --volumes
-	docker network create --driver bridge crawlernet || true
-	docker run --name webserver -v ./html:/usr/share/nginx/html:ro --network crawlernet -p 8080:80 -d nginx:stable-alpine
-	docker inspect --format='{{.NetworkSettings.Networks.crawlernet.Gateway}}' webserver
+# Run n clients in parallel (for bash/zsh)
+run_clients_bash:
+	@for i in $$(seq 1 ${n}); do \
+		docker-compose run client python client.py http://webserver:80 page_$$i.html & \
+	done
+
+# Open the webserver index page in the browser
+surf:
+	@echo "Please open http://localhost:8080 in your browser"
+
+# Install python dependencies locally (optional, for local testing)
+install:
+	pip3 install -r requirements.txt
+
 	
