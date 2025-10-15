@@ -19,7 +19,7 @@ run_server:
 
 # Run n clients in parallel
 run_clients:
-	@for /l %i in (1, 1, ${n}) do @start /b docker-compose run client python client.py http://webserver:80 page_%i.html
+	@for /l %i in (1, 1, $(n)) do @start /b docker-compose run client python client.py http://webserver:80 page_%i.html
 
 # Run n clients in parallel (for bash/zsh)
 run_clients_bash:
